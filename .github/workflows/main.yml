@@ -33,9 +33,6 @@ on:
           - no
           - yes
 
-  schedule:
-    - cron: '*/3 * * * *'
-
 jobs:
   build:
     runs-on: ubuntu-latest
