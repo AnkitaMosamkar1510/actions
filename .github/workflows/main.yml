@@ -1,12 +1,40 @@
 name: Node.js CI
 
+# Trigger events for manual run and cron schedule
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      TARGET_ENVIRONMENT:
+        description: "What environment do you want to deploy to?"
+        required: true
+        type: choice
+        options:
+          - none
+          - sandbox
+          - dev
+          - qa
+          - stage-eu
+          - prod-eu
+          - prod-eu-dr
+
+      TERRAFORM_COMMAND:
+        description: "Should terraform resources be created or destroyed?"
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
+
+      DEPLOY:
+        description: "Should the compiled code be pushed as a docker container and deployed via terraform?"
+        required: true
+        type: choice
+        options:
+          - no
+          - yes
+
+  schedule:
+    - cron: '*/3 * * * *'
 
 jobs:
   build:
