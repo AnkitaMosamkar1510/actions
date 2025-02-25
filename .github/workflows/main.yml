@@ -39,6 +39,7 @@ jobs:
 
     env:
       SAMPLE: "my ENV"
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
       - name: Checkout repository
@@ -52,14 +53,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Check if SECRET_KEY is set
-        run: |
-          if [ -z "${{ secrets.SECRET_KEY }}" ]; then
-            echo "SECRET_KEY is missing!"
-            exit 1
-          else
-            echo "SECRET_KEY is available!"
-          fi
+      - name: Print Secret
+        run: 
+          echo "SECRET KEY $SECRET_KEY"
+          echo "SAMPLE $SAMPLE"
 
       - name: Run script
         run: node index.js
