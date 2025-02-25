@@ -42,6 +42,45 @@ jobs:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
+      - name: Set Environment Specific Variables
+        if: ${{ github.event.inputs.TARGET_ENVIRONMENT != 'none' }}
+        run: |
+          TARGET_ENVIRONMENT="${{ github.event.inputs.TARGET_ENVIRONMENT }}"
+          
+          case "$TARGET_ENVIRONMENT" in
+            "sandbox")
+              ENVIRONMENT_SHORT_NAME="sb"
+              ;;
+            "dev")
+              ENVIRONMENT_SHORT_NAME="dev"
+              ;;
+            "qa")
+              ENVIRONMENT_SHORT_NAME="qa"
+              ;;
+            "stage-eu")
+              ENVIRONMENT_SHORT_NAME="stgeu"
+              ;;
+            "prod-eu")
+              ENVIRONMENT_SHORT_NAME="prodeu"
+              ;;
+            "prod-eu-dr")
+              ENVIRONMENT_SHORT_NAME="prodeudr"
+              ;;
+            *)
+              echo "Specified target environment '${TARGET_ENVIRONMENT}' is not supported.  Pipeline aborted."
+              exit 1
+              ;;
+          esac
+
+          # Set the Docker registry URL
+          DOCKER_REGISTRY_URL="amazon.com"
+          TERRAFORM_STATE_ACCOUNT_ID="123456"
+
+          # Echo the variables for visibility
+          echo "ENVIRONMENT_SHORT_NAME: $ENVIRONMENT_SHORT_NAME"
+          echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
+          echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
+
       - name: Checkout repository
         uses: actions/checkout@v3
 
