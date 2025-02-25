@@ -81,13 +81,18 @@ jobs:
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
 
-      - name: hash
+      - name: Hash and Set DISPLAY_NAME
         run: |
-          sha="${GITHUB_SHA}"
-          if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "yes" ]]; then
-            echo "DISPLAY_NAME=${{ github.event.inputs.TARGET_ENVIRONMENT }} - ${sha:0:7}" >> $GITHUB_ENV
+          sha_short=$(echo $GITHUB_SHA | cut -c1-7)
+          TARGET_ENV="${{ github.event.inputs.TARGET_ENVIRONMENT }}"
+          DEPLOY="${{ github.event.inputs.DEPLOY }}"
+        
+          if [[ "$TARGET_ENV" != "none" && "$DEPLOY" == "yes" ]]; then
+            echo "IN first IF"
+            echo "DISPLAY_NAME=$TARGET_ENV - $sha_short" >> $GITHUB_ENV
           else
-            echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
+            echo "IN else"
+            echo "DISPLAY_NAME=$sha_short" >> $GITHUB_ENV
           fi
 
       - name: Checkout repository
