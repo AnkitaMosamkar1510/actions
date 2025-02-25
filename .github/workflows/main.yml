@@ -81,6 +81,15 @@ jobs:
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
 
+      - name: hash
+        run: |
+          sha="${GITHUB_SHA}"
+          if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "yes" ]]; then
+            echo "DISPLAY_NAME=${{ github.event.inputs.TARGET_ENVIRONMENT }} - ${sha:0:7}" >> $GITHUB_ENV
+          else
+            echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v3
 
