@@ -87,13 +87,18 @@ jobs:
           TARGET_ENV="${{ github.event.inputs.TARGET_ENVIRONMENT }}"
           DEPLOY="${{ github.event.inputs.DEPLOY }}"
         
-          if [[ "$TARGET_ENV" != "none" && "$DEPLOY" == "yes" ]]; then
+          if [[ "$TARGET_ENV" != "none" && "$DEPLOY" == "true" ]]; then
             echo "IN first IF"
+            echo "DISPLAY_NAME=$TARGET_ENV - $sha_short" 
             echo "DISPLAY_NAME=$TARGET_ENV - $sha_short" >> $GITHUB_ENV
           else
             echo "IN else"
+            echo "DISPLAY_NAME=$sha_short"
             echo "DISPLAY_NAME=$sha_short" >> $GITHUB_ENV
           fi
+
+      - name: Print DISPLAY_NAME
+        run: echo "DISPLAY_NAME is $DISPLAY_NAME"
 
       - name: Checkout repository
         uses: actions/checkout@v3
