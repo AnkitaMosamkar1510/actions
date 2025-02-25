@@ -37,17 +37,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      SAMPLE: "my ENV"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-      
+          node-version: "20"
+
       - name: Install dependencies
         run: npm install
-      
+
+      - name: Check if SECRET_KEY is set
+        run: |
+          if [ -z "${{ secrets.SECRET_KEY }}" ]; then
+            echo "SECRET_KEY is missing!"
+            exit 1
+          else
+            echo "SECRET_KEY is available!"
+          fi
+
       - name: Run script
         run: node index.js
