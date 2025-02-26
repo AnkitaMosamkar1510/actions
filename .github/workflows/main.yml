@@ -104,8 +104,8 @@ jobs:
 
       - name: Run Jest Tests and Generate Report
         run: |
-          mkdir -p test-results
-          npx jest --ci --reporters=default --reporters=jest-junit
+          npm install
+          npm test
 
       - name: Upload Jest Test Results as Artifact
         uses: actions/upload-artifact@v4
