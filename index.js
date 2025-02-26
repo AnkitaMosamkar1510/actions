@@ -1,2 +1,10 @@
-// index.js
-console.log('Hello from GitHub Actions!');
+function add(a, b) {
+    return a + b;
+  }
+  
+  function subtract(a, b) {
+    return a - b;
+  }
+  
+  module.exports = { add, subtract };
+  

@@ -98,3 +98,27 @@ jobs:
 
       - name: Clean Git Repository
         run: git clean -xdf
+
+      - name: Clean Old Test Results
+        run: rm -rf ./test-results
+
+      - name: Run Jest Tests and Generate Report
+        run: |
+          mkdir -p test-results
+          npx jest --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: "./test-results"
+          JEST_JUNIT_OUTPUT_NAME: "jest-results.xml"
+
+      - name: Upload Jest Test Results as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "./test-results/jest-results.xml"
+
+      - name: Check for Failing Tests
+        run: |
+          if grep -q "<failure" test-results/jest-results.xml; then
+            echo "Some tests failed!"
+            exit 1
+          fi
