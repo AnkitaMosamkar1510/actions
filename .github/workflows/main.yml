@@ -106,9 +106,6 @@ jobs:
         run: |
           mkdir -p test-results
           npx jest --ci --reporters=default --reporters=jest-junit
-        env:
-          JEST_JUNIT_OUTPUT_DIR: "./test-results"
-          JEST_JUNIT_OUTPUT_NAME: "jest-results.xml"
 
       - name: Upload Jest Test Results as Artifact
         uses: actions/upload-artifact@v4
