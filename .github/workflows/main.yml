@@ -102,6 +102,9 @@ jobs:
       - name: Clean Old Test Results
         run: rm -rf ./test-results
 
+      - name: Ensure Jest is executable
+        run: chmod +x node_modules/.bin/jest
+
       - name: Run Jest Tests and Generate Report
         run: |
           npm install
