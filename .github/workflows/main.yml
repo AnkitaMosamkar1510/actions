@@ -83,9 +83,8 @@ jobs:
 
       - name: hash
         run: |
-          echo "DEPLOY=${{ github.event.inputs.DEPLOY }}"
           sha="${GITHUB_SHA}"
-          if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "yes" ]]; then
+          if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "true" ]]; then
             echo "DISPLAY_NAME=${{ github.event.inputs.TARGET_ENVIRONMENT }} - ${sha:0:7}" >> $GITHUB_ENV
           else
             echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
@@ -93,6 +92,9 @@ jobs:
 
       - name: Print DISPLAY_NAME
         run: echo "DISPLAY_NAME is $DISPLAY_NAME"
+
+      - name: Clean Git Repository
+        run: git clean -xdf
 
       - name: Checkout repository
         uses: actions/checkout@v3
