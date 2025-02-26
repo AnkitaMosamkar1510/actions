@@ -93,5 +93,8 @@ jobs:
       - name: Print DISPLAY_NAME
         run: echo "DISPLAY_NAME is $DISPLAY_NAME"
 
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Clean Git Repository
         run: git clean -xdf
