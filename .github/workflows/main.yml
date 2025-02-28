@@ -33,8 +33,8 @@ on:
           - no
           - yes
 
-  schedule:
-    - cron: '*/3 * * * *'  # Runs daily at midnight UTC
+  # schedule:
+  #   - cron: '*/3 * * * *'
 
 jobs:
   build:
