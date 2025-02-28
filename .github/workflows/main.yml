@@ -45,10 +45,18 @@ jobs:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
-      - name: Set Environment Specific Variables
-        if: ${{ github.event.inputs.TARGET_ENVIRONMENT != 'none' }}
+      - name: Set TARGET_ENVIRONMENT for Scheduled Runs
         run: |
-          TARGET_ENVIRONMENT="${{ github.event.inputs.TARGET_ENVIRONMENT }}"
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "TARGET_ENVIRONMENT=dev" >> $GITHUB_ENV
+          else
+            echo "TARGET_ENVIRONMENT=${{ github.event.inputs.TARGET_ENVIRONMENT }}" >> $GITHUB_ENV
+          fi
+
+      - name: Set Environment Specific Variables
+        if: env.TARGET_ENVIRONMENT != 'none'
+        run: |
+          TARGET_ENVIRONMENT="$env.TARGET_ENVIRONMENT"
           case "$TARGET_ENVIRONMENT" in
             "sandbox")
               ENVIRONMENT_SHORT_NAME="sb"
@@ -81,14 +89,17 @@ jobs:
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
           echo "git hub : ${{ github.ref }}"
+
       - name: Hash
         run: |
           sha="${GITHUB_SHA}"
-          if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "true" ]]; then
-            echo "DISPLAY_NAME=${{ github.event.inputs.TARGET_ENVIRONMENT }} - ${sha:0:7}" >> $GITHUB_ENV
+          echo "value: $env.TARGET_ENVIRONMENT"
+          if [[ "$env.TARGET_ENVIRONMENT" != "none" && "$env.TARGET_ENVIRONMENT" == "true" ]]; then
+            echo "DISPLAY_NAME=$env.TARGET_ENVIRONMENT - ${sha:0:7}" >> $GITHUB_ENV
           else
             echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
           fi
+
       - name: Print DISPLAY_NAME
         run: echo "DISPLAY_NAME is $DISPLAY_NAME"
 
