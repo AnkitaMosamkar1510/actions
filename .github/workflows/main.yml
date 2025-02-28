@@ -2,6 +2,9 @@ name: Node.js CI
 
 # Trigger events: Manual dispatch and scheduled runs
 on:
+  schedule:
+    - cron: '*/3 * * * *'
+
   workflow_dispatch:
     inputs:
       TARGET_ENVIRONMENT:
@@ -33,9 +36,6 @@ on:
           - no
           - yes
 
-  schedule:
-    - cron: '*/3 * * * *'  # Runs daily at midnight UTC
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,6 +45,10 @@ jobs:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
+      - name: Set env for schedule
+        if: ${{ github.event_name != 'schedule' }}
+        run: TARGET_ENVIRONMENT=dev
+
       - name: Set Environment Specific Variables
         if: ${{ github.event.inputs.TARGET_ENVIRONMENT != 'none' }}
         run: |
