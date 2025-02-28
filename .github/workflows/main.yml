@@ -83,7 +83,7 @@ jobs:
           echo "ENVIRONMENT_SHORT_NAME: $ENVIRONMENT_SHORT_NAME"
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
-          ech "git hub : ${{ github.ref }}"
+          echo "git hub : ${{ github.ref }}"
 
       - name: Hash
         run: |
