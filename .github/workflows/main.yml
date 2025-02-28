@@ -39,12 +39,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
 
     env:
       SAMPLE: "my ENV"
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
+      - name: Set TARGET_ENVIRONMENT for Scheduled Runs
+        if: github.event_name == 'schedule'
+        run: echo "TARGET_ENVIRONMENT=dev" >> $GITHUB_ENV
+
       - name: Set Environment Specific Variables
         if: ${{ github.event.inputs.TARGET_ENVIRONMENT != 'none' }}
         run: |
@@ -83,7 +88,6 @@ jobs:
           echo "ENVIRONMENT_SHORT_NAME: $ENVIRONMENT_SHORT_NAME"
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
-          echo "git hub : ${{ github.ref }}"
 
       - name: Hash
         run: |
