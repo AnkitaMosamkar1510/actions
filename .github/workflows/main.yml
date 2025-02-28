@@ -2,7 +2,6 @@ name: Node.js CI
 
 # Trigger events: Manual dispatch and scheduled runs
 on:
-  
   workflow_dispatch:
     inputs:
       TARGET_ENVIRONMENT:
@@ -35,7 +34,7 @@ on:
           - yes
 
   schedule:
-    - cron: '*/3 * * * *'
+    - cron: '*/3 * * * *'  # Runs daily at midnight UTC
 
 jobs:
   build:
@@ -82,8 +81,6 @@ jobs:
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
           echo "git hub : ${{ github.ref }}"
-          echo "git hub event_name : ${{ github.event_name }}"
-
       - name: Hash
         run: |
           sha="${GITHUB_SHA}"
@@ -92,7 +89,6 @@ jobs:
           else
             echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
           fi
-
       - name: Print DISPLAY_NAME
         run: echo "DISPLAY_NAME is $DISPLAY_NAME"
 
