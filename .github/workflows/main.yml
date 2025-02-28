@@ -1,5 +1,6 @@
 name: Node.js CI
 
+# Trigger events: Manual dispatch and scheduled runs
 on:
   workflow_dispatch:
     inputs:
@@ -15,6 +16,7 @@ on:
           - stage-eu
           - prod-eu
           - prod-eu-dr
+
       TERRAFORM_COMMAND:
         description: "Should terraform resources be created or destroyed?"
         required: true
@@ -22,6 +24,7 @@ on:
         options:
           - apply
           - destroy
+
       DEPLOY:
         description: "Should the compiled code be pushed as a docker container and deployed via terraform?"
         required: true
@@ -31,29 +34,78 @@ on:
           - yes
 
   schedule:
-    - cron: "*/3 * * * *" # Runs every 3 minutes
+    - cron: '*/3 * * * *'  # Runs daily at midnight UTC
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main' # ✅ Allow scheduled runs
 
     env:
       SAMPLE: "my ENV"
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
+      - name: Set Environment Specific Variables
+        if: ${{ github.event.inputs.TARGET_ENVIRONMENT != 'none' }}
+        run: |
+          TARGET_ENVIRONMENT="${{ github.event.inputs.TARGET_ENVIRONMENT }}"
+          case "$TARGET_ENVIRONMENT" in
+            "sandbox")
+              ENVIRONMENT_SHORT_NAME="sb"
+              ;;
+            "dev")
+              ENVIRONMENT_SHORT_NAME="dev"
+              ;;
+            "qa")
+              ENVIRONMENT_SHORT_NAME="qa"
+              ;;
+            "stage-eu")
+              ENVIRONMENT_SHORT_NAME="stgeu"
+              ;;
+            "prod-eu")
+              ENVIRONMENT_SHORT_NAME="prodeu"
+              ;;
+            "prod-eu-dr")
+              ENVIRONMENT_SHORT_NAME="prodeudr"
+              ;;
+            *)
+              echo "Specified target environment '${TARGET_ENVIRONMENT}' is not supported.  Pipeline aborted."
+              exit 1
+              ;;
+          esac
+          # Set the Docker registry URL
+          DOCKER_REGISTRY_URL="amazon.com"
+          TERRAFORM_STATE_ACCOUNT_ID="123456"
+          # Echo the variables for visibility
+          echo "ENVIRONMENT_SHORT_NAME: $ENVIRONMENT_SHORT_NAME"
+          echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
+          echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
+          echo "git hub : ${{ github.ref }}"
+          echo "git hub event_name : ${{ github.event_name }}"
+
+      - name: Hash
+        run: |
+          sha="${GITHUB_SHA}"
+          if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "true" ]]; then
+            echo "DISPLAY_NAME=${{ github.event.inputs.TARGET_ENVIRONMENT }} - ${sha:0:7}" >> $GITHUB_ENV
+          else
+            echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
+          fi
+
+      - name: Print DISPLAY_NAME
+        run: echo "DISPLAY_NAME is $DISPLAY_NAME"
+
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          ref: main # ✅ Explicitly check out the main branch
 
-      - name: Set TARGET_ENVIRONMENT for Scheduled Runs
-        if: github.event_name == 'schedule'
-        run: echo "TARGET_ENVIRONMENT=dev" >> $GITHUB_ENV # ✅ Ensure TARGET_ENVIRONMENT is set
+      - name: Clean Git Repository
+        run: git clean -xdf
 
-      - name: Print TARGET_ENVIRONMENT
-        run: echo "Running on TARGET_ENVIRONMENT=$TARGET_ENVIRONMENT"
+      - name: Clean Old Test Results
+        run: rm -rf ./test-results
+
+      - name: Ensure Jest is executable
+        run: chmod +x node_modules/.bin/jest
 
       - name: Run Jest Tests and Generate Report
         run: |
@@ -63,8 +115,20 @@ jobs:
           JEST_JUNIT_OUTPUT_DIR: "./test-results"
           JEST_JUNIT_OUTPUT_NAME: "jest-results.xml"
 
+      - name: Verify Jest Test Results
+        run: ls -l test-results/
+
       - name: Upload Jest Test Results as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: "./test-results/jest-results.xml"
+
+      - name: Check for Failing Tests
+        run: |
+          if grep -q "<failure" test-results/jest-results.xml; then
+            echo "❌ Some tests failed!"
+            exit 1
+          else
+            echo "✅ All tests passed!"
+          fi
