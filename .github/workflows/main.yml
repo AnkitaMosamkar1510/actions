@@ -1,6 +1,6 @@
 name: Node.js CI
 
-# Trigger events for manual run and cron schedule
+# Trigger events: Manual dispatch and scheduled runs
 on:
   workflow_dispatch:
     inputs:
@@ -33,9 +33,13 @@ on:
           - no
           - yes
 
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'  # Run only if the branch is master
 
     env:
       SAMPLE: "my ENV"
@@ -80,8 +84,9 @@ jobs:
           echo "ENVIRONMENT_SHORT_NAME: $ENVIRONMENT_SHORT_NAME"
           echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
           echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
+          ech "git hub : ${{ github.ref }}"
 
-      - name: hash
+      - name: Hash
         run: |
           sha="${GITHUB_SHA}"
           if [[ "${{ github.event.inputs.TARGET_ENVIRONMENT }}" != "none" && "${{ github.event.inputs.DEPLOY }}" == "true" ]]; then
@@ -125,6 +130,8 @@ jobs:
       - name: Check for Failing Tests
         run: |
           if grep -q "<failure" test-results/jest-results.xml; then
-            echo "Some tests failed!"
+            echo "❌ Some tests failed!"
             exit 1
+          else
+            echo "✅ All tests passed!"
           fi
