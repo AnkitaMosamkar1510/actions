@@ -45,10 +45,6 @@ jobs:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
-      - name: Set env for schedule
-        if: ${{ github.event_name != 'schedule' }}
-        run: TARGET_ENVIRONMENT=dev
-
       - name: Set Environment Specific Variables
         if: ${{ github.event.inputs.TARGET_ENVIRONMENT != 'none' }}
         run: |
