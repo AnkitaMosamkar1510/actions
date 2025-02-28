@@ -54,9 +54,9 @@ jobs:
           fi
 
       - name: Set Environment Specific Variables
-        if: env.TARGET_ENVIRONMENT != 'none'
+        if: ${{ env.TARGET_ENVIRONMENT != 'none' }}
         run: |
-          TARGET_ENVIRONMENT="$env.TARGET_ENVIRONMENT"
+          TARGET_ENVIRONMENT="${{ env.TARGET_ENVIRONMENT }}"
           case "$TARGET_ENVIRONMENT" in
             "sandbox")
               ENVIRONMENT_SHORT_NAME="sb"
@@ -93,9 +93,9 @@ jobs:
       - name: Hash
         run: |
           sha="${GITHUB_SHA}"
-          echo "value: $env.TARGET_ENVIRONMENT"
-          if [[ "$env.TARGET_ENVIRONMENT" != "none" && "$env.TARGET_ENVIRONMENT" == "true" ]]; then
-            echo "DISPLAY_NAME=$env.TARGET_ENVIRONMENT - ${sha:0:7}" >> $GITHUB_ENV
+          echo "value: $TARGET_ENVIRONMENT"
+          if [[ "$TARGET_ENVIRONMENT" != "none" && "${{ github.event.inputs.DEPLOY }}" == "true" ]]; then
+            echo "DISPLAY_NAME=$TARGET_ENVIRONMENT - ${sha:0:7}" >> $GITHUB_ENV
           else
             echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
           fi
