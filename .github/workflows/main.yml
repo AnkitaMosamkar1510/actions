@@ -1,142 +1,75 @@
-name: Node.js CI
+name: CI/CD
 
-# Trigger events: Manual dispatch and scheduled runs
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request_target:
+    branches: [main]
+
+  workflow_dispatch: # Manual trigger for other branches
     inputs:
-      TARGET_ENVIRONMENT:
+      target_environment:
         description: "What environment do you want to deploy to?"
         required: true
         type: choice
-        options:
-          - none
-          - sandbox
-          - dev
-          - qa
-          - stage-eu
-          - prod-eu
-          - prod-eu-dr
-
-      TERRAFORM_COMMAND:
-        description: "Should terraform resources be created or destroyed?"
-        required: true
+        options: [dev, qa, stage, prod]
+      terraform_command:
+        description: "Should terraform resources be created or destroyed? IF YOU SET THIS TO DESTROY, ALL TERRAFORM RESOURCES WILL BE DESTROYED."
+        required: false
         type: choice
-        options:
-          - apply
-          - destroy
-
-      DEPLOY:
-        description: "Should the compiled code be pushed as a docker container and deployed via terraform?"
-        required: true
+        options: ["apply", "destroy"]
+      deploy:
+        description: "Should the compiled code be pushed as a docker container and deployed via terraform."
+        required: false
         type: choice
-        options:
-          - no
-          - yes
+        default: "yes"
+        options: ["no", "yes"]
 
-  # schedule:
-  #   - cron: '*/3 * * * *'
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.event.inputs.target_environment }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    env:
-      SAMPLE: "my ENV"
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  set-env-vars:
+    runs-on: [self-hosted, Standard]
+    outputs:
+      TARGET_ENVIRONMENT: ${{ steps.set-env.outputs.TARGET_ENVIRONMENT }}
+      VAR_FILE: ${{ steps.set-env.outputs.VAR_FILE }}
 
     steps:
-      - name: Set TARGET_ENVIRONMENT for Scheduled Runs
+      - name: Set Environment-Specific Variables and Define tfvars file
+        id: set-env
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
         run: |
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            echo "TARGET_ENVIRONMENT=dev" >> $GITHUB_ENV
-          else
-            echo "TARGET_ENVIRONMENT=${{ github.event.inputs.TARGET_ENVIRONMENT }}" >> $GITHUB_ENV
-          fi
-
-      - name: Set Environment Specific Variables
-        if: ${{ env.TARGET_ENVIRONMENT != 'none' }}
-        run: |
-          TARGET_ENVIRONMENT="${{ env.TARGET_ENVIRONMENT }}"
           case "$TARGET_ENVIRONMENT" in
-            "sandbox")
-              ENVIRONMENT_SHORT_NAME="sb"
-              ;;
             "dev")
-              ENVIRONMENT_SHORT_NAME="dev"
+              VAR_FILE="env/dev.tfvars"
               ;;
             "qa")
-              ENVIRONMENT_SHORT_NAME="qa"
+              VAR_FILE="env/qa.tfvars"
               ;;
-            "stage-eu")
-              ENVIRONMENT_SHORT_NAME="stgeu"
+            "stage")
+              VAR_FILE="env/stage.tfvars"
               ;;
-            "prod-eu")
-              ENVIRONMENT_SHORT_NAME="prodeu"
-              ;;
-            "prod-eu-dr")
-              ENVIRONMENT_SHORT_NAME="prodeudr"
+            "prod")
+              VAR_FILE="env/prod.tfvars"
               ;;
             *)
-              echo "Specified target environment '${TARGET_ENVIRONMENT}' is not supported.  Pipeline aborted."
+              echo "Specified target environment '${TARGET_ENVIRONMENT}' is not supported. Pipeline aborted."
               exit 1
               ;;
           esac
-          # Set the Docker registry URL
-          DOCKER_REGISTRY_URL="amazon.com"
-          TERRAFORM_STATE_ACCOUNT_ID="123456"
-          # Echo the variables for visibility
-          echo "ENVIRONMENT_SHORT_NAME: $ENVIRONMENT_SHORT_NAME"
-          echo "TERRAFORM_STATE_ACCOUNT_ID: $TERRAFORM_STATE_ACCOUNT_ID"
-          echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
-          echo "git hub : ${{ github.ref }}"
+          echo "::set-output name=VAR_FILE::$VAR_FILE"
+          echo "::set-output name=TARGET_ENVIRONMENT::$TARGET_ENVIRONMENT"
 
-      - name: Hash
-        run: |
-          sha="${GITHUB_SHA}"
-          echo "value: $TARGET_ENVIRONMENT"
-          if [[ "$TARGET_ENVIRONMENT" != "none" && "${{ github.event.inputs.DEPLOY }}" == "true" ]]; then
-            echo "DISPLAY_NAME=$TARGET_ENVIRONMENT - ${sha:0:7}" >> $GITHUB_ENV
-          else
-            echo "DISPLAY_NAME=${sha:0:7}" >> $GITHUB_ENV
-          fi
 
-      - name: Print DISPLAY_NAME
-        run: echo "DISPLAY_NAME is $DISPLAY_NAME"
+  terraform:
+    needs: set-env-vars
+    if: needs.set-env-vars.outputs.TARGET_ENVIRONMENT != 'none'
+    uses: ./.github/workflows/terraform.yml
+    secrets: inherit
+    with:
+      TARGET_ENVIRONMENT: ${{ needs.set-env-vars.outputs.TARGET_ENVIRONMENT }}
+      VAR_FILE: ${{ needs.set-env-vars.outputs.VAR_FILE }}
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Clean Git Repository
-        run: git clean -xdf
-
-      - name: Clean Old Test Results
-        run: rm -rf ./test-results
-
-      - name: Ensure Jest is executable
-        run: chmod +x node_modules/.bin/jest
-
-      - name: Run Jest Tests and Generate Report
-        run: |
-          mkdir -p test-results
-          npx jest --ci --reporters=default --reporters=jest-junit
-        env:
-          JEST_JUNIT_OUTPUT_DIR: "./test-results"
-          JEST_JUNIT_OUTPUT_NAME: "jest-results.xml"
-
-      - name: Verify Jest Test Results
-        run: ls -l test-results/
-
-      - name: Upload Jest Test Results as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: "./test-results/jest-results.xml"
-
-      - name: Check for Failing Tests
-        run: |
-          if grep -q "<failure" test-results/jest-results.xml; then
-            echo "❌ Some tests failed!"
-            exit 1
-          else
-            echo "✅ All tests passed!"
-          fi

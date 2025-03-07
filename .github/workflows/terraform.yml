@@ -1,0 +1,21 @@
+name: Terraform Deployment
+
+on:
+  workflow_call:
+    inputs:
+      TARGET_ENVIRONMENT:
+        required: true
+        type: string
+      VAR_FILE:
+        required: true
+        type: string
+
+jobs:
+  terraform-validate:
+    runs-on: [self-hosted, Standard]
+    steps:
+      - name: Show PATH and Working Directory
+        run: |
+          echo $VAR_FILE
+          echo $TARGET_ENVIRONMENT
+          
