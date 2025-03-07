@@ -16,6 +16,24 @@ jobs:
     steps:
       - name: Show PATH and Working Directory
         run: |
-          echo $VAR_FILE
-          echo $TARGET_ENVIRONMENT
-          
+          echo "Target Environment: $TARGET_ENVIRONMENT"
+          echo "Terraform Variable File: $VAR_FILE"
+        
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Validate Terraform Configuration
+        run: terraform validate -var-file="$VAR_FILE"
+        
+      - name: Show Variables from VAR_FILE
+        run: |
+          echo "Reading variables from $VAR_FILE"
+          # Assuming the .tfvars is a standard HCL file, you could potentially extract values using a script
+          # For example, using grep to extract values from the VAR_FILE (not the most robust solution but for demonstration purposes)
+          cat "$VAR_FILE"  # or use a more advanced parsing technique
