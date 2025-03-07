@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   set-env-vars:
-    runs-on: [self-hosted, Standard]
+    runs-on: ubuntu-latest
     outputs:
       TARGET_ENVIRONMENT: ${{ steps.set-env.outputs.TARGET_ENVIRONMENT }}
       VAR_FILE: ${{ steps.set-env.outputs.VAR_FILE }}
