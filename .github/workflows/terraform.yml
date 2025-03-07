@@ -12,7 +12,7 @@ on:
 
 jobs:
   terraform-validate:
-    runs-on: [self-hosted, Standard]
+    runs-on: ubuntu-latest
     steps:
       - name: Show PATH and Working Directory
         run: |
